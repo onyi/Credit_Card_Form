@@ -1,4 +1,4 @@
-import React, {Component, useState} from 'react';
+import React, {useState, useEffect} from 'react';
 
 import visa from '../images/iconfinder_Visa-Curved_70599.png'; // Tell Webpack this JS file uses this image
 import discover from '../images/iconfinder_Discover-Curved_70605.png'; // Tell Webpack this JS file uses this image
@@ -23,58 +23,48 @@ import {
     checkMonthByCurrYear
 } from '../components/validators'
 
-class CreditCardForm extends React.Component {
+function CreditCardForm(){
 
-    constructor(props){
-        super(props);
-        this.state = (
-            {
-                cardInfo: 
-                    {
-                        name: "",
-                        cardNum: "",
-                        cvv: "",
-                        expMonth: "",
-                        expYear: ""
-                    },
-                errors: {
-                    name: "",
-                    cardNum: "",
-                    cvv: "",
-                    expMonth: "",
-                    expYear: ""
-                },
-            
-            }
-        );
+    const [ cardInfo, setCardInfo ] = useState({
+        name: "",
+        cardNum: "",
+        cvv: "",
+        expMonth: "",
+        expYear: ""
+    });
 
-        this.cvvLength = 3;
-        this.cardLength = 16;
-        this.type = cardType.unknown;
-        this.update = this.update.bind(this);
-        if(props.submitCallback){
-            this.handleSubmit = props.submitCallback;
-        }
-        this.handleSubmit = this.handleSubmit.bind(this);
-        this.setCardType = this.setCardType.bind(this);
+    const [ errors, setErrors ] = useState({
+        name: "",
+        cardNum: "",
+        cvv: "",
+        expMonth: "",
+        expYear: ""
+    })
 
-    }
+    const [ cvvLength, setCvvLength] = useState(3);
+    const [ cardLength, setCardLength] = useState(16);
+    const [ type, setType] = useState(cardType.unknown);
 
-    handleSubmit(e){
+    const handleSubmit = (e) => {
         e.preventDefault(); 
         // Submit cardInfo object to API endpoint, and either process to next step or display error based on API result 
 
         //axios.post()
 
         console.log(`Handle Submit`);
+
+
+        if( Object.values(errors).every( error => error === "" ) && Object.values(cardInfo).every( ele => ele !== "" ) ){
+            console.log(`Contains Credit Card info without error, ready to submit data`);
+        }
     }
 
-    handleCardNumber(num){
-        num = this.clearNumberFormat(num);
-        if(this.type === cardType.visa){
+    const handleCardNumber = (num) => {
+        num = clearNumberFormat(num);
+        if(type === cardType.visa){
             return num.toString().split("").map( (el, idx) => (idx+1) % 4 === 0 ? el+" " : el  ).join("").trim();
         }
-        else if(this.type === cardType.amEx){
+        else if(type === cardType.amEx){
            return num.toString().split("").map( (el, idx) => 
                 (idx+1) === 4 || (idx+1) === 10 ? el+" " : el  ).join("").trim();
         }else{
@@ -82,53 +72,53 @@ class CreditCardForm extends React.Component {
         }
     }
 
-    setCardType(num){
-        num = this.clearNumberFormat(num);
-        this.type = getCardTypeByNumber(num);
-        if(this.type === cardType.visa){
-            this.cardLength = 16;
-            this.cvvLength = 3;
+    const setCardType = (num) => {
+        num = clearNumberFormat(num);
+        let newType = getCardTypeByNumber(num);
+        setType(newType);
+        if(type === cardType.visa){
+            setCardLength(16);
+            setCvvLength(3);
         }
-        else if(this.type === cardType.amEx){
-            this.cardLength = 15;
-            this.cvvLength = 4;
+        else if(type === cardType.amEx){
+            setCardLength(15);
+            setCvvLength(4);
         }
         // add more credit card type in the future
+        return newType;
     }
 
-    clearNumberFormat(num){
+    const clearNumberFormat = (num) => {
         return num.toString().replace(/[ ]/g, "");
-
     }
 
-    update(e){
+    const update = (e) => {
         e.preventDefault();
         //Logic to check card number, cvv, month, and year
         let val = e.currentTarget.value;
-        let name = e.currentTarget.name;
+        let inputName = e.currentTarget.name;
         let update = true; //determine whether component input field should update
 
-        let errors = this.state.errors;
-
-        // console.log(`Card Type: ${this.type}, CVV: ${this.cvvLength}, Num Length: ${this.cardLength}`);
+        // console.log(`Card Type: ${type}, CVV: ${cvvLength}, Num Length: ${cardLength}`);
         
         //Filter out invalid input for numeric only input fields
-        if(["cardNum", "expMonth", "expYear", "cvv"].includes(name)){
-            if(val && !checkNumber(this.clearNumberFormat(val))){
+        if(["cardNum", "expMonth", "expYear", "cvv"].includes(inputName)){
+            if(val && !checkNumber(clearNumberFormat(val))){
                 return;
             }
         }
-
-        if(name === "cardNum"){  //Determine what Credit Card type is based on Card Number
-            this.setCardType(val);
+        let newCardType = cardType.unknown;
+        if(inputName === "cardNum"){  //Determine what Credit Card type is based on Card Number
+            // debugger;
+            newCardType = setCardType(val); //Get Credit Card type based on current Credit Card number input value
             //When Card type changed, should also trigger CVV check
-            if(this.state.cardInfo.cvv && !checkCvv2(this.state.cardInfo.cvv, this.type) ) {
-                errors.cvv = `CVV should be ${this.cvvLength} integers!`;
+            if(cardInfo.cvv && !checkCvv2(cardInfo.cvv, newCardType) ) {
+                errors.cvv = `CVV should be ${cvvLength} integers!`;
                 // update = false;
             }
         }
 
-        switch(name){
+        switch(inputName){
             case "name":
                 if(val && !checkName(val.trim())) {
                     errors.name = cardErrors.nameError;
@@ -138,170 +128,172 @@ class CreditCardForm extends React.Component {
                 }
                 break;
             case "cardNum": 
-                // if(val && !checkNumber(this.clearNumberFormat(val) ) ) {
+                // if(val && !checkNumber(clearNumberFormat(val) ) ) {
                 //     errors.cardNum = cardErrors.invalidCardFormat;
                 //     update = false;
                 // }
-                if(val && this.type === cardType.unknown){
+
+                if(val && newCardType === cardType.unknown){
                     errors.cardNum = `Your Credit Card is unsupported`;
                 }
                 else{
                     errors.cardNum = ``;
                 }
                 
-                if(this.clearNumberFormat(val).length > this.cardLength) { // if card number is already at the maximum length, do not update
+                if(clearNumberFormat(val).length > cardLength) { // if card number is already at the maximum length, do not update
                     update = false;
+                }else{
+                    if(cardInfo.cvv && !checkCvv2(cardInfo.cvv, type) ) {
+                        // console.log(`Invalid CVV`);
+                        errors.cvv = `CVV should be ${cvvLength} integers!`;
+                    }else{
+                        errors.cvv = "";
+                    }
                 }
 
-                val = this.handleCardNumber(val); //helper method to format number string with space according to card type
+                val = handleCardNumber(val); //helper method to format number string with space according to card type
                 break;
             case "cvv":
-                if(val && !checkCvv2(val, this.type) ) {
-                    errors.cvv = `CVV should be ${this.cvvLength} integers!`;
+                if(val && !checkCvv2(val, type) ) {
+                    errors.cvv = `CVV should be ${cvvLength} integers!`;
                     // update = false;
                 }else{
                     errors.cvv = "";
                 }
                 break;
             case "expYear":
-                if(val && ! checkYear(val) ) {
-                    errors.expYear = cardErrors.expYear;
-                    // update = false;
-                }else{
-                    errors.expYear = "";
-
-                }
+                checkMonthYear(cardInfo.expMonth, val);
                 break;
             case "expMonth":
-                let hasError = false;
-                if(checkCurrYear(this.state.cardInfo.expYear)){ //if it is current year
-                    if(val && !checkMonthByCurrYear(val)){
-                        hasError = true;
-                        errors.expMonth = cardErrors.pastMonth;
-                    }
-                }
-                if( val && ! checkMonth(val) ) {
-                    errors.expMonth = cardErrors.expMonth;
-                    hasError = true;
-                    // update = false;
-                }
-                if(!hasError){
-                    errors.expMonth = "";
-                }
-
+                checkMonthYear(val, cardInfo.expYear);
                 break;
             default: 
                 break;
         }
 
-
-        let cardInfo = this.state.cardInfo;
         if(update){
-            cardInfo[name] = val;
-            this.setState({
-                cardInfo,
-                errors
-            });
+            setCardInfo({ ...cardInfo, [inputName]: val});
+            setErrors( { ...errors } );
         }else{
-            this.setState({
-                errors
-            });
+            setErrors( {...errors });
         }
-        // console.log(`State: ${JSON.stringify(this.state.cardInfo)}`)
-
+        // console.log(`State: ${JSON.stringify(cardInfo)}`)
     }
 
-    doSomthing(){
-        console.log(`Do Something`);
+    //Helper method to check Month and Year together because sometimes they are depending on each other
+    const checkMonthYear = (month, year) => {
+        let hasError = false;
+
+        if(year && ! checkYear(year) ) {
+            errors.expYear = cardErrors.expYear;
+            // update = false;
+        }else{
+            errors.expYear = "";
+        }
+
+        if(checkCurrYear(year)){ //if it is current year
+            if(month && !checkMonthByCurrYear(month)){
+                hasError = true;
+                errors.expMonth = cardErrors.pastMonth;
+            }
+        }
+        else{ // else, just check month normally
+            if( month && !checkMonth(month) ) {
+                errors.expMonth = cardErrors.expMonth;
+                hasError = true;
+                // update = false;
+            }
+        }
+        if(!hasError){
+            errors.expMonth = "";
+        }
+        return hasError;
     }
 
-    render(){
-        const {name, cardNum, cvv, expMonth, expYear} = this.state.cardInfo;
 
-        return (
-            <div className="ccform-body">
-                <form className="ccform-content " onSubmit={this.handleSubmit}>
-                    <div className="ccform-row">
-                        <span>Enter your credit card information</span>
-                    </div>
+    const {name, cardNum, cvv, expMonth, expYear} = cardInfo;
 
-                    <div className="ccform-row">
-                        <input type="text" name="name" value={name} placeholder="Name" 
-                            className="form-control ccform__input"
-                            onChange={this.update}></input>
-                    </div>
+    return (
+        <div className="ccform-body">
+            <form className="ccform-content " onSubmit={handleSubmit}>
+                <div className="ccform-row">
+                    <span>Enter your credit card information</span>
+                </div>
 
-                    { this.state.errors.name ? 
-                            <div className="ccform-error">
-                                <span>{this.state.errors.name}</span>
-                            </div>
-                        : ""}
+                <div className="ccform-row">
+                    <input type="text" name="name" value={name} placeholder="Name" 
+                        className="form-control ccform__input"
+                        onChange={update}></input>
+                </div>
 
-                    <div className="ccform-row">
-                        <input type="text" name="cardNum" value={cardNum} placeholder="Card Number" 
-                            className={`form-control ccform__input ${this.state.errors.cardNum ? "is-invalid": ""}`}
-                            onChange={this.update}></input>
-                    </div>
-
-                    { this.state.errors.cardNum ? 
-                            <div className="ccform-error">
-                                <span>{this.state.errors.cardNum}</span>
-                            </div>
-                        : ""}
-
-                    <div className="ccform-row">
-                        <input type="text" name="cvv" maxLength={this.cvvLength} value={cvv} placeholder="CVV2" 
-                            className={`form-control ccform__input  ${this.state.errors.cvv ? "is-invalid": ""}`} onChange={this.update}></input>
-                    </div>
-
-                    { this.state.errors.cvv ? 
-                            <div className="ccform-error">
-                                <span>{this.state.errors.cvv}</span>
-                            </div>
-                        : ""}
-
-                    <div className="ccform-row ccdate row">
-
-                        <div className="col-xs-2">
-                            <input type="text" name="expMonth" maxLength="2" value={expMonth} placeholder="Exp. Month" 
-                            className={`form-control ccform__input  ${this.state.errors.expMonth ? "is-invalid": ""}`} onChange={this.update}></input>
+                { errors.name && 
+                        <div className="ccform-error">
+                            <span>{errors.name}</span>
                         </div>
-                        <div className="col-xs-2">
-                            <input type="text" maxLength="2" name="expYear" value={expYear} placeholder="Exp. Year" 
-                            className={`form-control ccform__input  ${this.state.errors.expYear ? "is-invalid": ""}`} onChange={this.update}></input>
+                }
+
+                <div className="ccform-row">
+                    <input type="text" name="cardNum" value={cardNum} placeholder="Card Number" 
+                        className={`form-control ccform__input ${errors.cardNum && "is-invalid"}`}
+                        onChange={update}></input>
+                </div>
+
+                { errors.cardNum && 
+                        <div className="ccform-error">
+                            <span>{errors.cardNum}</span>
                         </div>
+                }
 
+                <div className="ccform-row">
+                    <input type="text" name="cvv" maxLength={cvvLength} value={cvv} placeholder="CVV2" 
+                        className={`form-control ccform__input  ${errors.cvv && "is-invalid"}`} onChange={update}></input>
+                </div>
+
+                { errors.cvv && 
+                    <div className="ccform-error">
+                        <span>{errors.cvv}</span>
+                    </div>
+                }
+
+                <div className="ccform-row ccdate row">
+
+                    <div className="col-xs-2">
+                        <input type="text" name="expMonth" maxLength="2" value={expMonth} placeholder="Exp. Month" 
+                        className={`form-control ccform__input  ${errors.expMonth && "is-invalid"}`} onChange={update}></input>
+                    </div>
+                    <div className="col-xs-2">
+                        <input type="text" maxLength="2" name="expYear" value={expYear} placeholder="Exp. Year" 
+                        className={`form-control ccform__input  ${errors.expYear && "is-invalid"}`} onChange={update}></input>
                     </div>
 
-                    { this.state.errors.expYear ? 
-                            <div className="ccform-error">
-                                <span>{this.state.errors.expYear}</span>
-                            </div>
-                        : ""}
+                </div>
+
+                { errors.expYear && 
+                        <div className="ccform-error">
+                            <span>{errors.expYear}</span>
+                        </div>
+                }
 
 
-                    { this.state.errors.expMonth ? 
-                            <div className="ccform-error">
-                                <span>{this.state.errors.expMonth}</span>
-                            </div>
-                        : ""}
+                { errors.expMonth && 
+                        <div className="ccform-error">
+                            <span>{errors.expMonth}</span>
+                        </div>
+                }
 
 
-                    <div className="ccform-row ccimages">
-                        <img className={`ccimages__image ${this.type === cardType.visa ? "ccimages__image--selected" : ""}`} alt="visa" src={visa}></img>
-                        {/* <img className={`ccimages__image ${this.type === cardType.discover ? "ccimages__image--selected" : ""}`} alt="discover" src={discover}></img>
-                        <img className={`ccimages__image ${this.type === cardType.master ? "ccimages__image--selected" : ""}`} alt="master" src={master}></img> */}
-                        <img className={`ccimages__image ${this.type === cardType.amEx ? "ccimages__image--selected" : ""}`} alt="amEx" src={amEx}></img>
-                    </div>
-                    
-                    <button type="submit" className="btn btn-primary" onClick={this.handleSubmit}>Submit</button>
-                </form>
+                <div className="ccform-row ccimages">
+                    <img className={`ccimages__image ${type === cardType.visa && "ccimages__image--selected"}`} alt="visa" src={visa}></img>
+                    {/* <img className={`ccimages__image ${type === cardType.discover && "ccimages__image--selected"}`} alt="discover" src={discover}></img>
+                    <img className={`ccimages__image ${type === cardType.master && "ccimages__image--selected"}`} alt="master" src={master}></img> */}
+                    <img className={`ccimages__image ${type === cardType.amEx && "ccimages__image--selected"}`} alt="amEx" src={amEx}></img>
+                </div>
+                
+                <button type="submit" className="btn btn-primary" onClick={handleSubmit}>Submit</button>
+            </form>
 
-            </div>
-        )
-
-
-    }
+        </div>
+    )
 
 }
 
