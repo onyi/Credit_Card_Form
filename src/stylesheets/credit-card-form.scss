@@ -1,0 +1,97 @@
+
+.ccform-body{
+    border-radius: 0.5em;
+    border: 1px gray solid;
+    background-color: lightgray;
+    max-width: 20em;
+    // position: absolute;
+    // top: 50%;
+    // left: 50%;
+
+    margin: 0 auto;
+    margin-top: 10em;
+
+}
+
+
+.ccform-content {
+    padding: 1.5em;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    > div{
+        width: 100%;
+    }
+
+}
+
+
+
+.ccform__input{
+    text-align: center;
+}
+
+.ccimages{
+    margin-left: 0.25em;
+    margin-right: 0.25em;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-evenly;
+}
+
+.ccimages__image{
+    width: 2.8em;
+    height: 1.6em;
+    padding: 0.15em;
+}
+
+
+.ccimages__image--selected{
+    border: 2px blue solid;
+    -webkit-transition: all 0.50s;
+    transition: all 0.50s;
+    &:hover {
+        border: 1px solid gray;
+        filter: brightness(130%);
+        -webkit-filter: brightness(130%);
+        -moz-filter: brightness(130%);
+        -o-filter: brightness(130%);
+        -ms-filter: brightness(130%);
+        -webkit-transition: all 0.50s;
+        transition: all 0.50s;
+    }
+}
+
+
+.form-group{ //overriding default bootstrap behavior
+    padding: 0.3em;
+
+}
+
+.ccform-row{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.3em;
+    margin-left: 0.25em;
+    margin-right: 0.25em;
+    width: 80vw;
+}
+
+.ccdate{
+    display: flex;
+    justify-content: space-evenly;
+    align-items: flex-start;
+
+    input {
+        width: 7em;
+    }
+}
+
+
+.ccform-error{
+    color: red;
+    text-align: center;
+    font-size: 0.75em;
+}
