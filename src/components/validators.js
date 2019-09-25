@@ -19,7 +19,7 @@ export const checkCvv2 = (input, type) => {
 
 
 export const checkMonth = (input) => {
-    return input.toString().match(/^([0]?[1-9]{1}|[1][12]{1})$/g) !== null;
+    return input.toString().match(/^([0]?[1-9]{1}|[1][012])$/g) !== null;
 }
 
 export const checkYear = (input) => {
@@ -42,5 +42,5 @@ export const checkCurrYear = (input) => {
 export const checkMonthByCurrYear = (input) => {
     let currMonth = new Date().getMonth() + 1;
     console.log(`input: ${parseInt(input)}, currMonth: ${currMonth}`);
-    return parseInt(input) > currMonth;
+    return parseInt(input) >= currMonth;
 }
